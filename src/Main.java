@@ -75,6 +75,79 @@ public static ArrayList<Leaf> construct_leaves(NodeList partenza){
 			}
 		return foglie;
 	}
+
+public static ArrayList<Datamodel> crea_oggetti_scxml (FolderReader folderreader) throws IOException, ModelException, XMLStreamException{
+	
+	ArrayList<File> Skill = new ArrayList<File>();
+	ArrayList<Datamodel> Scxml_file = new ArrayList<Datamodel>();
+	
+	Skill = folderreader.getSkill();
+	SCXML scxml = null;
+	
+	for(File skill : Skill) {
+		
+		if(skill.isDirectory()) {
+    		 
+    		 File[] list1 = skill.listFiles();
+    		 
+    		 for(File fil : list1) 
+    			 
+    			 if(fil.getName().contains(".scxml")) {
+    				 
+    				 scxml = SCXMLReader.read("file:\\"+fil.toString());
+    				 Datamodel datamodel = scxml.getDatamodel();
+    				 Scxml_file.add(datamodel);
+    			}
+    		}
+	    } 
+	
+	return Scxml_file;
+ }
+
+public static ArrayList<ParseTree> crea_oggetti_da_antlr(ArrayList<File> lista_directories) throws IOException {
+	
+	
+    ArrayList<ParseTree> java_obj = new ArrayList<ParseTree>();
+    
+    for(File directory : lista_directories) {
+    	
+    	if(directory.isDirectory()) {
+    		
+    		File[] lista_file = directory.listFiles();
+        	
+        	for(File file : lista_file) {
+        		
+        		if(file.getName().contains(".thrift")){
+        			
+        			CharStream codePointCharStream = CharStreams.fromFileName(file.getAbsolutePath());
+        			ThriftLexer lexer = new ThriftLexer(codePointCharStream);
+        			
+    		        CommonTokenStream tokens = new CommonTokenStream(lexer);
+    	             
+    		        ThriftParser parser = new ThriftParser(tokens);
+    		        ParseTree tree = parser.document(); 
+    		        java_obj.add(tree);
+
+        		}else if (file.getName().contains(".cpp")) {
+        			
+        			CharStream codePointCharStream = CharStreams.fromFileName(file.getAbsolutePath());
+	    			CPP14Lexer lexer = new CPP14Lexer(codePointCharStream);
+	    			
+			        CommonTokenStream tokens = new CommonTokenStream(lexer);
+		
+			        CPP14Parser parser = new CPP14Parser(tokens);
+			        ParseTree tree = parser.translationUnit(); 
+		            java_obj.add(tree);
+        		}
+        	}
+    	}
+    	
+    	
+    }
+    
+    return java_obj;
+	
+}
 	
 	
 public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, ModelException, XMLStreamException {
@@ -95,101 +168,17 @@ public static void main(String[] args) throws ParserConfigurationException, SAXE
 		NodeList partenza = doc.getDocumentElement().getChildNodes();
 		
 		ArrayList<Leaf> foglie = construct_leaves(partenza);
+		ArrayList<Datamodel> oggetti_scxml = crea_oggetti_scxml(folderreader);
 		
-		ArrayList<File> Skill = new ArrayList<File>();
-		ArrayList<File> Scxml_file = new ArrayList<File>();
-		
-		Skill = folderreader.getSkill();
-		SCXML scxml = null;
-		
-		for(File skill : Skill) {
-			
-			if(skill.isDirectory()) {
-	    		 
-	    		 File[] list1 = skill.listFiles();
-	    		 
-	    		 
-	    		 for(File fil : list1) 
-	    			 
-	    			 if(fil.getName().contains(".scxml")) {
-	    				 //Scxml_file.add(fil);
-	    				 //C:\Users\david\OneDrive\Desktop\progetto SE\bt-implementation\src\BatteryLevel_skill\BatteryLevelSkillStateMachine.scxml
-	    				 scxml = SCXMLReader.read("file:\\"+fil.toString());
-	    				 //System.out.println(scxml.getDatamodel());
-	    				 Datamodel datamodel = scxml.getDatamodel();
-	    				 for(Data data : datamodel.getData())
-	    					 System.out.println(data.getId());
-	    					 
-	    		}
-	    				 
-	    				 
-		}
-		
-		
-	} 
+		ArrayList<File> Component = new ArrayList<File>();
+	    Component = folderreader.getComponent();
+	    ArrayList<ParseTree> oggetti_cpp = crea_oggetti_da_antlr(Component);
+	    
+	    ArrayList<File> Protocol = new ArrayList<File>();
+	    Protocol = folderreader.getProtocol();
+	    ArrayList<ParseTree> oggetti_thrift = crea_oggetti_da_antlr(Protocol);
+		int a = 1;
 		    
-		    ArrayList<File> Protocol = new ArrayList<File>();
-		    Protocol = folderreader.getProtocol();
-		    ArrayList<ParseTree> thrift_obj = new ArrayList<ParseTree>();
-		    
-		    for(File protocol : Protocol) {
-		    	
-		    	File[] list2 = protocol.listFiles();
-		    	
-		    	for(File fil1 : list2) {
-		    		 FileInputStream fis = null;
-		    		if(fil1.getName().contains(".thrift")) {
-		    			
-		    			fis = new FileInputStream(fil1);
-		    			
-		    			CharStream codePointCharStream = CharStreams.fromFileName(fil1.getAbsolutePath());
-		    			ThriftLexer lexer = new ThriftLexer(codePointCharStream);
-		    			
-				        CommonTokenStream tokens = new CommonTokenStream(lexer);
-			
-				        ThriftParser parser = new ThriftParser(tokens);
-				        ParseTree tree = parser.document(); 
-				        thrift_obj.add(tree);
-//				        List<String> ruleNamesList = Arrays.asList(parser.getRuleNames());
-//				        String prettyTree = TreeUtils.toPrettyTree(tree, ruleNamesList);
-//				        System.out.println(prettyTree); // print LISP-style tree
-		    		}
-		    	}
-		    	
-		    }
-		    
-		    ArrayList<File> Component = new ArrayList<File>();
-		    Component = folderreader.getComponent();
-		    ArrayList<ParseTree> cpp_obj = new ArrayList<ParseTree>();
-		    
-		    for(File component : Component) {
-		    	
-		    	File[] list3 = component.listFiles();
-		    	
-		    	for(File fil2 : list3) {
-		    		 FileInputStream fis = null;
-		    		if(fil2.getName().contains(".cpp")) {
-		    			
-		    			fis = new FileInputStream(fil2);
-		    			
-		    			CharStream codePointCharStream = CharStreams.fromFileName(fil2.getAbsolutePath());
-		    			CPP14Lexer lexer = new CPP14Lexer(codePointCharStream);
-		    			
-				        CommonTokenStream tokens = new CommonTokenStream(lexer);
-			
-				        CPP14Parser parser = new CPP14Parser(tokens);
-				        ParseTree tree = parser.translationUnit(); 
-			            cpp_obj.add(tree);
-//				        List<String> ruleNamesList = Arrays.asList(parser.getRuleNames());
-//				        String prettyTree = TreeUtils.toPrettyTree(tree, ruleNamesList);
-//				        System.out.println(prettyTree); // print LISP-style tree
-		    		}
-		    	}
-		    	
-		    }
-		    
-
-	
-}
+	}
 
 }
