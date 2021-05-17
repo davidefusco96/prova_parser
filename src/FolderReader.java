@@ -1,5 +1,7 @@
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class FolderReader {
 	
@@ -7,6 +9,7 @@ public class FolderReader {
 	private ArrayList<File> component;
 	private ArrayList<File> protocol;
 	private ArrayList<File> skill;
+	private ArrayList<Conf_file> configuration_files;
 	private File xmlBT;
 	
 	public FolderReader() {
@@ -14,9 +17,22 @@ public class FolderReader {
 		    this.component = new ArrayList<File>();
 			this.protocol = new ArrayList<File>();
 			this.skill = new ArrayList<File>();
+			this.configuration_files = new ArrayList<Conf_file>();
 			this.xmlBT = null;
 	}
 	
+	public ArrayList<Conf_file> getConfiguration_files() {
+		return configuration_files;
+	}
+
+	public void setConfiguration_files(ArrayList<Conf_file> configuration_files) {
+		this.configuration_files = configuration_files;
+	}
+
+	public void setXmlBT(File xmlBT) {
+		this.xmlBT = xmlBT;
+	}
+
 	public ArrayList<File> getComponent() {
 		return component;
 	}
@@ -45,7 +61,7 @@ public class FolderReader {
 		return this.xmlBT;
 	}
 	
-	public void read_folder(String path) {
+	public void read_folder(String path) throws FileNotFoundException {
 		
 		File f = new File(path);
 		
@@ -58,18 +74,41 @@ public class FolderReader {
 		
 		 if(fSrc.isDirectory() && fConf.isDirectory()) {
 	    	 
-	    	 File[] list = fSrc.listFiles();
+	    	 File[] listsrc = fSrc.listFiles();
+	    	 File[] listconf = fConf.listFiles();
 	    	 
-	    	 for(File fil : list) {
+	    	 for(File filsrc : listsrc) {
 	    		 
-	              if(fil.getName().contains("_component")) {
-	           	   component.add(fil);
-	              }else if(fil.getName().contains("_protocol")) {
-	           	   protocol.add(fil);
-	              }else if(fil.getName().contains("_skill")) {
-	           	   skill.add(fil);
+	              if(filsrc.getName().contains("_component")) {
+	           	   component.add(filsrc);
+	              }else if(filsrc.getName().contains("_protocol")) {
+	           	   protocol.add(filsrc);
+	              }else if(filsrc.getName().contains("_skill")) {
+	           	   skill.add(filsrc);
 	              }
 		    	 }
+	    	 
+	    	 for(File filconf : listconf) {
+	    		 
+	    		 Conf_file conf_file = new Conf_file();
+	    		 Scanner myReader = new Scanner(filconf);
+	    		 while (myReader.hasNextLine()) {
+	    		        String data = myReader.nextLine();
+	    		        if(data.contains("=")) {
+	    		        	final int index = data.indexOf("=");
+	    		        	String first = data.substring(0,index-1);
+	    		        	String second = data.substring(index+1,data.length());
+	    		        	switch(first) {
+	    		        	case "skill-name" : conf_file.setSkill_name(second);break;
+	    		        	case "location" : conf_file.setLocation(second);break;
+	    		        	case "skillID" : conf_file.setSkillID(second);break;
+	    		        	default : break;
+	    		        	}
+	    		        }
+	    		      }
+	    		 this.configuration_files.add(conf_file);
+	    		      myReader.close();
+	    	 }
 	    	 
 	    	 String BTDir = new String(String.valueOf(srcDir) + "\\BT");
 	    	 File fBT = new File(BTDir);
