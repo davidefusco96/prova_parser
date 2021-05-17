@@ -24,6 +24,7 @@ import org.apache.commons.scxml2.model.Data;
 import org.apache.commons.scxml2.model.Datamodel;
 import org.apache.commons.scxml2.model.ModelException;
 import org.apache.commons.scxml2.model.SCXML;
+import org.apache.commons.scxml2.model.State;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -76,12 +77,11 @@ public static ArrayList<Leaf> construct_leaves(NodeList partenza){
 		return foglie;
 	}
 
-public static ArrayList<Datamodel> crea_oggetti_scxml (FolderReader folderreader) throws IOException, ModelException, XMLStreamException{
+public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderreader) throws IOException, ModelException, XMLStreamException{
 	
 	ArrayList<File> Skill = new ArrayList<File>();
-	ArrayList<Datamodel> Scxml_file = new ArrayList<Datamodel>();
-	
-	Skill = folderreader.getSkill();
+	ArrayList<Oggetto_scxml> lista_oggetti_SCXML = new ArrayList<Oggetto_scxml>();
+    Skill = folderreader.getSkill();
 	SCXML scxml = null;
 	
 	for(File skill : Skill) {
@@ -94,15 +94,14 @@ public static ArrayList<Datamodel> crea_oggetti_scxml (FolderReader folderreader
     			 
     			 if(fil.getName().contains(".scxml")) {
     				 
-    				 scxml = SCXMLReader.read("file:\\"+fil.toString());
-    				 Datamodel datamodel = scxml.getDatamodel();
-    				 Scxml_file.add(datamodel);
+    				 Oggetto_scxml oggetto_scxml = new Oggetto_scxml();
+    				 oggetto_scxml.Construct_model(scxml, fil);
+    				 lista_oggetti_SCXML.add(oggetto_scxml);
     			}
     		}
-	    } 
-	
-	return Scxml_file;
- }
+	    }
+	return lista_oggetti_SCXML;
+	 }
 
 public static ArrayList<ParseTree> crea_oggetti_da_antlr(ArrayList<File> lista_directories) throws IOException {
 	
@@ -168,7 +167,8 @@ public static void main(String[] args) throws ParserConfigurationException, SAXE
 		NodeList partenza = doc.getDocumentElement().getChildNodes();
 		
 		ArrayList<Leaf> foglie = construct_leaves(partenza);
-		ArrayList<Datamodel> oggetti_scxml = crea_oggetti_scxml(folderreader);
+		
+		ArrayList<Oggetto_scxml> oggetti_scxml = crea_oggetti_scxml(folderreader);
 		
 		ArrayList<File> Component = new ArrayList<File>();
 	    Component = folderreader.getComponent();
@@ -178,7 +178,7 @@ public static void main(String[] args) throws ParserConfigurationException, SAXE
 	    Protocol = folderreader.getProtocol();
 	    ArrayList<ParseTree> oggetti_thrift = crea_oggetti_da_antlr(Protocol);
 		int a = 1;
-		    
+//		    
 	}
 
 }
