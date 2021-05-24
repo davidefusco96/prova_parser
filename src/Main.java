@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,11 +21,14 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.scxml2.io.SCXMLReader;
+import org.apache.commons.scxml2.model.Action;
 import org.apache.commons.scxml2.model.Data;
 import org.apache.commons.scxml2.model.Datamodel;
 import org.apache.commons.scxml2.model.ModelException;
+import org.apache.commons.scxml2.model.OnEntry;
 import org.apache.commons.scxml2.model.SCXML;
 import org.apache.commons.scxml2.model.State;
+import org.apache.commons.scxml2.model.Script;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -77,7 +81,7 @@ public static ArrayList<Leaf> construct_leaves(NodeList partenza){
 		return foglie;
 	}
 
-public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderreader) throws IOException, ModelException, XMLStreamException{
+public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderreader, ArrayList<Conf_file> lista_file_conf) throws IOException, ModelException, XMLStreamException{
 	
 	ArrayList<File> Skill = new ArrayList<File>();
 	ArrayList<Oggetto_scxml> lista_oggetti_SCXML = new ArrayList<Oggetto_scxml>();
@@ -85,6 +89,10 @@ public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderre
 	SCXML scxml = null;
 	
 	for(File skill : Skill) {
+		String[] parts = skill.toString().split("\\\\");
+		String skill_name_completo = parts[parts.length-1];
+		String split_skill_name = skill_name_completo.substring(0,skill_name_completo.indexOf("_"));
+		//System.out.println(split_skill_name);
 		
 		if(skill.isDirectory()) {
     		 
@@ -94,9 +102,68 @@ public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderre
     			 
     			 if(fil.getName().contains(".scxml")) {
     				 
+    				 
+    				 
+    				 ArrayList<Conf_file> file_ini = new ArrayList<Conf_file>();
+
+    			    	for(Conf_file file : lista_file_conf) {
+    			    				    	  if(file.getClass_name().contains(split_skill_name)) {
+    				    		  file_ini.add(file);
+    				    	  }
+    			    	}
+    			    	
+    			     if(file_ini.size() > 1) {
+    			     for(Conf_file file_parametrizzato : file_ini) {
+    			    	 
+    			     ArrayList<State> lista_stati = new ArrayList<State>();
+    				 System.out.println(split_skill_name+": ");
     				 Oggetto_scxml oggetto_scxml = new Oggetto_scxml();
+    				 oggetto_scxml.setNome_skill(split_skill_name);
     				 oggetto_scxml.Construct_model(scxml, fil);
+    				 for(State stato : oggetto_scxml.getStates()) {
+    				 lista_stati.add(stato);
+    			     System.out.println(stato.getId());
+    			     for(OnEntry onentry : stato.getOnEntries()) {
+    		    			for(Action action : onentry.getActions()) {
+    		    				if(action.getClass().getName().contains("Script")) {
+    		    				  Script script = new Script();
+    		    				  script = (Script) action;
+    		    				  
+    	    					  boolean trovato_location = script.getBody().contains("location");
+    	    					  boolean trovato_skill_name=script.getBody().contains("skill-name");
+    	    					  boolean trovato_skilliD=script.getBody().contains("skillID");
+    	    					  if(trovato_location) {
+    	    						  System.out.println(script.getBody());
+    	    						  String newscript = script.getBody().replace("location",'"'+file_parametrizzato.getLocation()+'"');
+    	    						  script.setBody(newscript);
+    	    						  System.out.println(script.getBody());
+    	    					  }
+    	    					  if(trovato_skill_name) {
+    	    						  System.out.println(script.getBody());
+    	    						  String newscript = script.getBody().replace("skill-name",'"'+file_parametrizzato.getSkill_name()+'"');
+    	    						  script.setBody(newscript);
+    	    						  System.out.println(script.getBody());
+    	    					  }
+    	    					  if(trovato_skilliD) {
+    	    						  System.out.println(script.getBody());
+    	    						  String newscript = script.getBody().replace("skillID",'"'+file_parametrizzato.getSkillID()+'"');
+    	    						  script.setBody(newscript);
+    	    						  System.out.println(script.getBody());
+    	    					  }
+    		    		     }
+    		    	      }
+    		    		}
+    					 
+    				 }
+    				 
     				 lista_oggetti_SCXML.add(oggetto_scxml);
+    			     }
+    			     }else {
+    			    	 Oggetto_scxml oggetto_scxml = new Oggetto_scxml();
+        				 oggetto_scxml.setNome_skill(split_skill_name);
+        				 oggetto_scxml.Construct_model(scxml, fil);
+        				 lista_oggetti_SCXML.add(oggetto_scxml);
+    			     }
     			}
     		}
 	    }
@@ -127,16 +194,6 @@ public static ArrayList<ParseTree> crea_oggetti_da_antlr(ArrayList<File> lista_d
     		        ParseTree tree = parser.document(); 
     		        java_obj.add(tree);
 
-        		}else if (file.getName().contains(".cpp")) {
-        			
-        			CharStream codePointCharStream = CharStreams.fromFileName(file.getAbsolutePath());
-	    			CPP14Lexer lexer = new CPP14Lexer(codePointCharStream);
-	    			
-			        CommonTokenStream tokens = new CommonTokenStream(lexer);
-		
-			        CPP14Parser parser = new CPP14Parser(tokens);
-			        ParseTree tree = parser.translationUnit(); 
-		            java_obj.add(tree);
         		}
         	}
     	}
@@ -149,7 +206,7 @@ public static ArrayList<ParseTree> crea_oggetti_da_antlr(ArrayList<File> lista_d
 }
 	
 	
-public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, ModelException, XMLStreamException {
+public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, ModelException, XMLStreamException, CloneNotSupportedException {
 		
 		String path = "C:\\Users\\david\\OneDrive\\Desktop\\progetto SE\\bt-implementation";
 		
@@ -168,17 +225,20 @@ public static void main(String[] args) throws ParserConfigurationException, SAXE
 		
 		ArrayList<Leaf> foglie = construct_leaves(partenza);
 		
-		ArrayList<Oggetto_scxml> oggetti_scxml = crea_oggetti_scxml(folderreader);
+		ArrayList<Conf_file> lista_file_conf = new ArrayList<Conf_file>();
+	    for(Conf_file confile : folderreader.getConfiguration_files())
+	    	lista_file_conf.add(confile);
 		
-		ArrayList<File> Component = new ArrayList<File>();
-	    Component = folderreader.getComponent();
-	    ArrayList<ParseTree> oggetti_cpp = crea_oggetti_da_antlr(Component);
-	    
+		ArrayList<Oggetto_scxml> oggetti_scxml = crea_oggetti_scxml(folderreader,lista_file_conf);
+		
+		
 	    ArrayList<File> Protocol = new ArrayList<File>();
 	    Protocol = folderreader.getProtocol();
 	    ArrayList<ParseTree> oggetti_thrift = crea_oggetti_da_antlr(Protocol);
-		int a = 1;
-//		    
-	}
+	   }
+	   
+	   
+	 }
+	
 
-}
+

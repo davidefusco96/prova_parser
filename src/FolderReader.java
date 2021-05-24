@@ -91,6 +91,10 @@ public class FolderReader {
 	    	 for(File filconf : listconf) {
 	    		 
 	    		 Conf_file conf_file = new Conf_file();
+    		    String[] parts = filconf.toString().split("\\\\");
+    			String class_name_completo = parts[parts.length-1];
+    			//System.out.print(class_name_completo);
+	    		 conf_file.setClass_name(class_name_completo);
 	    		 Scanner myReader = new Scanner(filconf);
 	    		 while (myReader.hasNextLine()) {
 	    		        String data = myReader.nextLine();
@@ -99,9 +103,9 @@ public class FolderReader {
 	    		        	String first = data.substring(0,index-1);
 	    		        	String second = data.substring(index+1,data.length());
 	    		        	switch(first) {
-	    		        	case "skill-name" : conf_file.setSkill_name(second);break;
-	    		        	case "location" : conf_file.setLocation(second);break;
-	    		        	case "skillID" : conf_file.setSkillID(second);break;
+	    		        	case "skill-name" : conf_file.setSkill_name(second.trim());break;
+	    		        	case "location" : conf_file.setLocation(second.trim());break;
+	    		        	case "skillID" : conf_file.setSkillID(second.trim());break;
 	    		        	default : break;
 	    		        	}
 	    		        }
