@@ -81,7 +81,7 @@ public static ArrayList<Leaf> construct_leaves(NodeList partenza){
 		return foglie;
 	}
 
-public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderreader, ArrayList<Conf_file> lista_file_conf) throws IOException, ModelException, XMLStreamException{
+public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderreader, ArrayList<Conf_file> lista_file_conf) throws IOException, ModelException, XMLStreamException, SAXException, ParserConfigurationException{
 	
 	ArrayList<File> Skill = new ArrayList<File>();
 	ArrayList<Oggetto_scxml> lista_oggetti_SCXML = new ArrayList<Oggetto_scxml>();
@@ -116,13 +116,13 @@ public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderre
     			     for(Conf_file file_parametrizzato : file_ini) {
     			    	 
     			     ArrayList<State> lista_stati = new ArrayList<State>();
-    				 System.out.println(split_skill_name+": ");
+    				 
     				 Oggetto_scxml oggetto_scxml = new Oggetto_scxml();
     				 oggetto_scxml.setNome_skill(split_skill_name);
     				 oggetto_scxml.Construct_model(scxml, fil);
     				 for(State stato : oggetto_scxml.getStates()) {
     				 lista_stati.add(stato);
-    			     System.out.println(stato.getId());
+    			     
     			     for(OnEntry onentry : stato.getOnEntries()) {
     		    			for(Action action : onentry.getActions()) {
     		    				if(action.getClass().getName().contains("Script")) {
@@ -133,22 +133,24 @@ public static ArrayList<Oggetto_scxml> crea_oggetti_scxml (FolderReader folderre
     	    					  boolean trovato_skill_name=script.getBody().contains("skill-name");
     	    					  boolean trovato_skilliD=script.getBody().contains("skillID");
     	    					  if(trovato_location) {
-    	    						  System.out.println(script.getBody());
+    	    						 
     	    						  String newscript = script.getBody().replace("location",'"'+file_parametrizzato.getLocation()+'"');
     	    						  script.setBody(newscript);
-    	    						  System.out.println(script.getBody());
+    	    						  String nome_completo = file_parametrizzato.getLocation().substring(0, 1).toUpperCase() + file_parametrizzato.getLocation().substring(1);
+    	    						  oggetto_scxml.setNome_skill(split_skill_name+nome_completo);
+    	    						 
     	    					  }
     	    					  if(trovato_skill_name) {
-    	    						  System.out.println(script.getBody());
+    	    						  
     	    						  String newscript = script.getBody().replace("skill-name",'"'+file_parametrizzato.getSkill_name()+'"');
     	    						  script.setBody(newscript);
-    	    						  System.out.println(script.getBody());
+    	    						  
     	    					  }
     	    					  if(trovato_skilliD) {
-    	    						  System.out.println(script.getBody());
+    	    						  
     	    						  String newscript = script.getBody().replace("skillID",'"'+file_parametrizzato.getSkillID()+'"');
     	    						  script.setBody(newscript);
-    	    						  System.out.println(script.getBody());
+    	    						  
     	    					  }
     		    		     }
     		    	      }
